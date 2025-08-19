@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   Image,
   View,
@@ -6,84 +6,83 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { login } from '../api/auth';
-import { ActivityIndicator } from 'react-native';
-import AppDrawer from '../navigation/AppDrawer';
-
+import { useAuth } from "../context/AuthContext";
 
 type RootStackParamList = {
   Login: undefined;
   Register: undefined;
-  Dashboard: undefined;
-  AppDrawer: undefined; // add this
+  AppDrawer: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
-   const [UserToken, setUserToken] = useState('');
+  const { setUserToken } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Check for token on mount
-  useEffect(() => {
-    const checkToken = async () => {
-      const token = await AsyncStorage.getItem('authToken');
-      if (token) {
-        setUserToken(token);
-       //navigation.replace('AppDrawer');
-      }
-    };
-    checkToken();
-  }, []);
-
-  // Handle login request
   const handleLogin = async () => {
+    if (!email || !password) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please enter both email and password.',
+      });
+      return;
+    }
+
     try {
       setLoading(true);
+
       const response = await login(email, password);
       const token = response.token;
+      const refreshToken = response.refreshToken;
 
+      // store tokens with SAME KEYS used in App/AuthContext
       await AsyncStorage.setItem('authToken', token);
+      await AsyncStorage.setItem('refreshToken', refreshToken);
 
       Toast.show({
         type: 'success',
         text1: 'Login Successful',
-        text2: 'You have successfully logged in.',
+        text2: 'Welcome back!',
         position: 'top',
       });
 
-     navigation.navigate('AppDrawer');
+      // update AuthContext
+      setUserToken(token);
+
     } catch (error: any) {
       if (error.response) {
-        const message = error.response.data?.message || 'Invalid credentials';
         Toast.show({
           type: 'error',
           text1: 'Login Failed',
-          text2: message,
+          text2: error.response.data?.message || 'Invalid credentials',
         });
       } else if (error.request) {
         Toast.show({
           type: 'error',
           text1: 'Network Error',
-          text2: 'No response from server. Please check your connection.',
+          text2: 'No response from server. Please check your internet.',
         });
       } else {
         Toast.show({
           type: 'error',
           text1: 'Unexpected Error',
-          text2: 'Something went wrong.',
+          text2: 'Something went wrong. Please try again.',
         });
+        console.log(error);
       }
     } finally {
       setLoading(false);
@@ -103,7 +102,6 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.formContainer}>
           <Text style={styles.title}>Login</Text>
 
-          {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
           {loading && (
             <ActivityIndicator size="large" color="#0066cc" style={{ marginVertical: 20 }} />
           )}
@@ -124,7 +122,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             value={password}
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
             <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
 
@@ -165,12 +163,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 30,
     textAlign: 'center',
-  },
-  error: {
-    fontSize: 14,
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 10,
   },
   input: {
     borderWidth: 1,

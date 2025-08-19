@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "669824604974",
+    "project_id": "hubspot-d486c",
+    "storage_bucket": "hubspot-d486c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:669824604974:android:3d40bc1533136e4ee7f8bf",
+        "android_client_info": {
+          "package_name": "com.hubspotapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxmvXaAfNaUE9JO1Qtstuz5rRYPW_6Cyk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

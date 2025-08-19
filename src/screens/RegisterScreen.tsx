@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Dimensions, KeyboardAvoidingView,
@@ -7,32 +7,47 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Toast from 'react-native-toast-message';
 import { register } from '../api/auth'; // ✅ your axios function
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../context/AuthContext';
+
 
 type RootStackParamList = {
   Login: undefined;
   Register: undefined;
+  AppDrawer: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
 const RegisterScreen: React.FC<Props> = ({ navigation }) => {
+  const { setUserToken } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState("");
 
   const handleRegister = async () => {
     try {
-      await register({ name, email, password });
+      const res = await register({ name, email, password, phone }); // API call
+      const { token, refreshToken, name: userName } = res;
+
+      // Save token in AsyncStorage for future auth checks
+      await AsyncStorage.setItem('authToken', token);
+      await AsyncStorage.setItem('refreshToken', refreshToken);
+      await AsyncStorage.setItem('userName', userName);
+
+      setUserToken(token);
       Toast.show({
         type: 'success',
         text1: 'Registration successful',
       });
-      navigation.navigate('Login');
+
     } catch (err: any) {
       Toast.show({
         type: 'error',
         text1: err.response?.data?.message || 'Registration failed',
       });
+      console.log(err)
     }
   };
 
@@ -54,6 +69,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           keyboardType="email-address"
           onChangeText={setEmail}
           value={email}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Mobile Number"
+          keyboardType="phone-pad"
+          onChangeText={setPhone}
+          value={phone}
         />
         <TextInput
           style={styles.input}
