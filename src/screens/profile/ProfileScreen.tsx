@@ -8,7 +8,7 @@ import {
   ScrollView,
   RefreshControl,
 } from "react-native";
-import api from "../api/api";
+import api from "../../api/api";
 import { useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 

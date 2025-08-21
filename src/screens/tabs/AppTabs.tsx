@@ -1,9 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import HomeScreen from './HomeScreen';
-import MenuScreen from './MenuScreen';
-import DashboardScreen from './DashboardScreen';
-import SettingsScreen from './SettingsScreen';
+import HomeScreen from '../HomeScreen';
+import MenuScreen from '../MenuScreen';
+import DashboardScreen from '../DashboardScreen';
+import SettingsScreen from '../SettingsScreen';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { TouchableOpacity } from 'react-native';

@@ -7,13 +7,14 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../api/api";
 import Toast from 'react-native-toast-message';
+import { useAuth } from "../context/AuthContext";
 
 type CustomDrawerProps = {
   setUserToken: (token: string | null) => void;
 };
 
 function CustomDrawerContent(props: any & CustomDrawerProps) {
-  const { setUserToken } = props;
+    const { setUserToken, logout } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -31,8 +32,9 @@ function CustomDrawerContent(props: any & CustomDrawerProps) {
 
         if (res.status === 200) {
           // ✅ API returned success
-          await AsyncStorage.multiRemove(["authToken", "refreshToken"]);
-          setUserToken(null); // reset to login screen
+          await AsyncStorage.multiRemove(["authToken", "refreshToken","user"]);
+          setUserToken(null);
+          logout(); // reset to login screen
           Toast.show({
             type: "success",
             text1: "Logout!!",
@@ -43,7 +45,8 @@ function CustomDrawerContent(props: any & CustomDrawerProps) {
         }
       } else {
         // no token -> just clear and reset
-        await AsyncStorage.multiRemove(["authToken", "refreshToken"]);
+        await AsyncStorage.multiRemove(["authToken", "refreshToken","user"]);
+        logout();
         setUserToken(null);
       }
     } catch (err) {
@@ -52,7 +55,7 @@ function CustomDrawerContent(props: any & CustomDrawerProps) {
 
 
     // Clear tokens
-    await AsyncStorage.multiRemove(["authToken", "refreshToken"]);
+    await AsyncStorage.multiRemove(["authToken", "refreshToken","user"]);
 
     // 👈 Update root state, this will switch navigator
     setUserToken(null);

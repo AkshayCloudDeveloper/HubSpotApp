@@ -1,4 +1,4 @@
-// PushNotificationService.ts (modular API)
+// PushNotificationService.ts
 import { getApp } from "@react-native-firebase/app";
 import {
   getMessaging,
@@ -10,8 +10,9 @@ import {
   requestPermission,
   AuthorizationStatus,
 } from "@react-native-firebase/messaging";
-import { Alert, Platform } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useContext } from "react";
+import { Alert } from "react-native";
+import { NotificationContext } from "./src/context/NotificationContext";
 
 const messaging = getMessaging(getApp());
 
@@ -32,50 +33,71 @@ export async function getFCMToken() {
   return token;
 }
 
-export function listenForNotifications() {
-  // Foreground messages
-  onMessage(messaging, async remoteMessage => {
-    await saveNotification(remoteMessage);
-    Alert.alert(
-      remoteMessage.notification?.title ?? "Notification",
-      remoteMessage.notification?.body ?? ""
-    );
-  });
+/**
+ * React hook to listen for notifications in all states
+ */
+export function useNotificationListener() {
+  const { addNotification } = useContext(NotificationContext);
 
-  // When the app is opened from a notification (background)
-  onNotificationOpenedApp(messaging, remoteMessage => {
-    console.log("Opened from background:", remoteMessage);
-  });
+  useEffect(() => {
+    // Foreground
+    const unsubscribe = onMessage(messaging, async (remoteMessage) => {
+      if (remoteMessage?.notification) {
+        addNotification({
+          id: Date.now().toString(),
+          title: remoteMessage.notification.title || "No Title",
+          body: remoteMessage.notification.body || "No Message",
+          receivedAt: new Date().toLocaleString(),
+        });
 
-  // When the app is opened from a notification (quit)
-  getInitialNotification(messaging).then(remoteMessage => {
-    if (remoteMessage) {
-      console.log("Opened from quit state:", remoteMessage);
-    }
-  });
-
-  // Background handler
-  setBackgroundMessageHandler(messaging, async remoteMessage => {
-    console.log("Message handled in the background!", remoteMessage);
-  });
-}
-
-// Function to save notification in AsyncStorage
-async function saveNotification(notification: any) {
-  try {
-    const existing = await AsyncStorage.getItem("notifications");
-    let notifications = existing ? JSON.parse(existing) : [];
-
-    notifications.unshift({
-      id: Date.now(), // unique id
-      title: notification.notification?.title,
-      body: notification.notification?.body,
-      data: notification.data,
-      read: false,
+        Alert.alert(
+          remoteMessage.notification?.title ?? "Notification",
+          remoteMessage.notification?.body ?? ""
+        );
+      }
     });
 
-    await AsyncStorage.setItem("notifications", JSON.stringify(notifications));
-  } catch (err) {
-    console.error("Error saving notification:", err);
-  }
+    // Opened from background
+    const unsubscribeOpened = onNotificationOpenedApp(messaging, (remoteMessage) => {
+      if (remoteMessage?.notification) {
+        addNotification({
+          id: Date.now().toString(),
+          title: remoteMessage.notification.title || "No Title",
+          body: remoteMessage.notification.body || "No Message",
+          receivedAt: new Date().toLocaleString(),
+        });
+      }
+    });
+
+    // Opened from quit state
+    getInitialNotification(messaging).then((remoteMessage) => {
+      if (remoteMessage?.notification) {
+        addNotification({
+          id: Date.now().toString(),
+          title: remoteMessage.notification.title || "No Title",
+          body: remoteMessage.notification.body || "No Message",
+          receivedAt: new Date().toLocaleString(),
+        });
+      }
+    });
+
+    // Background messages
+    setBackgroundMessageHandler(messaging, async (remoteMessage) => {
+      if (remoteMessage?.notification) {
+        // 👇 This will run even if app is in background
+        addNotification({
+          id: Date.now().toString(),
+          title: remoteMessage.notification.title || "No Title",
+          body: remoteMessage.notification.body || "No Message",
+          receivedAt: new Date().toLocaleString(),
+        });
+      }
+      console.log("Message handled in the background!", remoteMessage);
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeOpened();
+    };
+  }, []);
 }

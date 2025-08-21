@@ -1,26 +1,24 @@
 import React, { useContext } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { NotificationContext } from "../context/NotificationContext";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-type Notification = {
-  id: string;
-  title: string;
-  body: string;
-  read: boolean;
-};
 
-export const BellIcon = ({ navigation }: { navigation: any }) => {
-  // 👇 tell TypeScript what NotificationContext contains
-  const { notifications } = useContext(NotificationContext) as {
-    notifications: Notification[];
-  };
+interface BellIconProps {
+  navigation: any;
+}
 
-  const unreadCount = notifications.filter((n: Notification) => !n.read).length;
+export const BellIcon: React.FC<BellIconProps> = ({ navigation }) => {
+  const { notifications } = useContext(NotificationContext); // ✅ useContext
+
+  // Count unread notifications
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <TouchableOpacity onPress={() => navigation.navigate("Notifications")}>
+    <TouchableOpacity onPress={() => navigation.navigate("NotificationsScreen")}>
       <View style={{ position: "relative", marginRight: 20 }}>
-        <Text style={{ fontSize: 24 }}>🔔</Text>
+       <Ionicons name="notifications-outline" size={27} color="#f4f1f1ff" />
+
         {unreadCount > 0 && (
           <View
             style={{
@@ -35,7 +33,9 @@ export const BellIcon = ({ navigation }: { navigation: any }) => {
               justifyContent: "center",
             }}
           >
-            <Text style={{ color: "white", fontSize: 12 }}>{unreadCount}</Text>
+            <Text style={{ color: "white", fontSize: 12, fontWeight: "bold" }}>
+              {unreadCount}
+            </Text>
           </View>
         )}
       </View>

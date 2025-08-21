@@ -14,8 +14,9 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
-import { login } from '../api/auth';
-import { useAuth } from "../context/AuthContext";
+import { login } from '../../api/auth';
+import { useAuth } from "../../context/AuthContext";
+import  registerDevice  from '../../api/deviceApi';
 
 type RootStackParamList = {
   Login: undefined;
@@ -26,7 +27,7 @@ type RootStackParamList = {
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const { setUserToken } = useAuth();
+  const { setUserToken, setUser } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,10 +49,16 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       const response = await login(email, password);
       const token = response.token;
       const refreshToken = response.refreshToken;
+      const user = { role: response.role, name: response.name }
+      // Save token in AsyncStorage for future auth checks
+      await AsyncStorage.multiSet([
+        ['authToken', token],
+        ['refreshToken', refreshToken],
+        ['user', JSON.stringify(user)]
+      ]);
 
-      // store tokens with SAME KEYS used in App/AuthContext
-      await AsyncStorage.setItem('authToken', token);
-      await AsyncStorage.setItem('refreshToken', refreshToken);
+      setUserToken(token);
+      setUser(user);
 
       Toast.show({
         type: 'success',
@@ -59,11 +66,10 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         text2: 'Welcome back!',
         position: 'top',
       });
-
-      // update AuthContext
-      setUserToken(token);
+      registerDevice();
 
     } catch (error: any) {
+      console.log(error.response)
       if (error.response) {
         Toast.show({
           type: 'error',
@@ -71,6 +77,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
           text2: error.response.data?.message || 'Invalid credentials',
         });
       } else if (error.request) {
+        console.log("AXIOS ERROR REQUEST:", error.request);
         Toast.show({
           type: 'error',
           text1: 'Network Error',
@@ -96,7 +103,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollView}>
         <View style={styles.logoContainer}>
-          <Image source={require('../../assets/logo.png')} style={styles.logo} />
+          <Image source={require('../../../assets/logo.png')} style={styles.logo} />
         </View>
 
         <View style={styles.formContainer}>

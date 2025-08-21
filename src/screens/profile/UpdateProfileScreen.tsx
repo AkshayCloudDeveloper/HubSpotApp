@@ -11,9 +11,9 @@ import {
     ScrollView,
     RefreshControl
 } from "react-native";
-import { getProfile, updateProfile } from "../api/user";
-import { resetToLogin } from "../api/RootNavigation";
-import { useAuth } from "../context/AuthContext";
+import { getProfile, updateProfile } from "../../api/user";
+import { resetToLogin } from "../../api/RootNavigation";
+import { useAuth } from "../../context/AuthContext";
 
 export default function UpdateProfileScreen() {
     const { logout } = useAuth();
