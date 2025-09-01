@@ -1,7 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, Dimensions, Platform } from 'react-native';
+import { RFValue } from 'react-native-responsive-fontsize';
 
 import CustomerDashboard from '../CustomerDashboard';
 import CustomerAppointments from '../CustomerAppointments';
@@ -9,55 +10,61 @@ import ServiceRequestScreen from '../ServiceRequestScreen';
 import { BellIcon } from '../../../components/BellIcon';
 import { useNavigation } from '@react-navigation/native';
 
-
-
 const Tab = createBottomTabNavigator();
 
 export default function CustomerBottomTabs() {
-
   const navigation = useNavigation<any>();
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: true,
-        tabBarIcon: ({ color, size }) => {
+        tabBarIcon: ({ color }) => {
           let iconName = '';
 
           if (route.name === 'Dashboard') iconName = 'home-outline';
           if (route.name === 'Appointments') iconName = 'calendar-outline';
           if (route.name === 'ServiceRequest') iconName = 'construct-outline';
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName} size={RFValue(20)} color={color} />;
         },
         headerStyle: {
-          height: 60, // decrease height (default ~80 on iOS)
-          shadowColor: 'transparent', // remove shadow on iOS
-          backgroundColor: '#4c669f', // set your desired header color
+          shadowColor: 'transparent',
+          backgroundColor: '#4c669f',
         },
+
         headerTintColor: '#fff',
         headerTitleStyle: {
-          fontWeight: 'bold',
+          fontWeight: '600',
+          fontSize: RFValue(18),
+          textShadowColor: 'rgba(0, 0, 0, 0.5)',
+          textShadowOffset: { width: -1, height: 1 },
+          textShadowRadius: 4,
+        },
+        tabBarLabelStyle: {
+          fontSize: RFValue(10),
         },
         headerLeft: () => (
           <TouchableOpacity
-            onPress={() => navigation.openDrawer()} // 👈 Opens Drawer
-            style={{ marginLeft: 12, marginRight: 4 }}
+            onPress={() => navigation.openDrawer()}
+            style={{ marginLeft: RFValue(12), marginRight: RFValue(4) }}
           >
-            <Ionicons name="menu" size={24} color="#f6f6f6ff" />
+            <Ionicons name="menu" size={RFValue(22)} color="#f6f6f6ff" />
           </TouchableOpacity>
         ),
         headerRight: () => <BellIcon navigation={navigation} />,
-      })
-
-      }
+      })}
     >
       <Tab.Screen name="Dashboard" component={CustomerDashboard} />
       <Tab.Screen name="Appointments" component={CustomerAppointments} />
-      <Tab.Screen name="ServiceRequest" component={ServiceRequestScreen} options={{
-        title: "Service Request",
-        tabBarLabel: "Service Request",
-      }} />
+      <Tab.Screen
+        name="ServiceRequest"
+        component={ServiceRequestScreen}
+        options={{
+          title: "Service Request",
+          tabBarLabel: "Service Request",
+        }}
+      />
     </Tab.Navigator>
   );
 }

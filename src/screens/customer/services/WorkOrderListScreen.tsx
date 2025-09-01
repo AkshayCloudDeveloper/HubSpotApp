@@ -1,14 +1,28 @@
 // screens/WorkOrderListScreen.tsx
-import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+    View,
+    Text,
+    FlatList,
+    StyleSheet,
+    ActivityIndicator,
+    TouchableOpacity,
+    RefreshControl,
+} from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import api from "../../../api/api";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from '@react-navigation/stack';
 import LinearGradient from "react-native-linear-gradient";
+import {
+    responsiveWidth,
+    responsiveHeight,
+    responsiveFontSize
+} from "react-native-responsive-dimensions";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 type WorkOrder = {
-    id: number;
+    _id: string;
     title: string;
     description?: string;
     status: string;
@@ -20,56 +34,9 @@ type WorkOrder = {
     notes?: string;
 };
 
-
-const dummyData: WorkOrder[] = [
-    {
-        id: 1,
-        title: "AC Maintenance",
-        status: "Pending",
-        scheduled_date: "2025-08-20",
-        notes: "Check gas pressure and filters."
-    },
-    {
-        id: 2,
-        title: "Electrical Wiring",
-        status: "In Progress",
-        scheduled_date: "2025-08-21",
-        notes: "Replace damaged wires in living room."
-    },
-    {
-        id: 3,
-        title: "Plumbing Leak",
-        status: "Completed",
-        scheduled_date: "2025-08-15",
-        notes: "Fixed pipe under kitchen sink."
-    },
-    {
-        id: 4,
-        title: "Plumbing Leak",
-        status: "Completed",
-        scheduled_date: "2025-08-15",
-        notes: "Fixed pipe under kitchen sink."
-    },
-    {
-        id: 5,
-        title: "Plumbing Leak",
-        status: "Completed",
-        scheduled_date: "2025-08-15",
-        notes: "Fixed pipe under kitchen sink."
-    },
-    {
-        id: 6,
-        title: "Plumbing Leak",
-        status: "Completed",
-        scheduled_date: "2025-08-15",
-        notes: "Fixed pipe under kitchen sink."
-    }
-];
-
 type RootStackParamList = {
     Home: undefined;
-    CreateWorkOrder: undefined;  // no params
-    // Add other screens here
+    CreateWorkOrder: undefined;
 };
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
@@ -78,6 +45,7 @@ const WorkOrderListScreen = () => {
     const navigation = useNavigation<NavigationProp>();
     const [orders, setOrders] = useState<WorkOrder[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         fetchOrders();
@@ -85,21 +53,27 @@ const WorkOrderListScreen = () => {
 
     const fetchOrders = async () => {
         try {
-            // Temporary: use dummy data until API works
-            // const res = await api.get("/workorders");
-            // setOrders(res.data);
-            setOrders(dummyData);
+            const res = await api.get("/workorders?status=pending");
+            console.log("Fetched work orders:", res.data);
+            setOrders(res.data);
         } catch (err) {
             console.error("Error fetching work orders", err);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
-    if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchOrders();
+    }, []);
+
+    if (loading && !refreshing) {
+        return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+    }
 
     const handleCreateWorkOrder = () => {
-        // Later navigate to create work order scree
         navigation.navigate("CreateWorkOrder");
         console.log("FAB clicked: Navigate to Create Work Order screen");
     };
@@ -112,20 +86,62 @@ const WorkOrderListScreen = () => {
             >
                 <FlatList
                     data={orders}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item }) => (
-                        <View style={styles.card}>
-                            <View style={styles.cardHeader}>
-                                <Text style={styles.orderTitle}>{item.title}</Text>
-                                <Text style={styles.status}>{item.status}</Text>
+                    keyExtractor={(item, index) => item._id ? item._id.toString() : index.toString()}
+                    renderItem={({ item }) => {
+                        return (
+                            <View style={styles.card}>
+                                <View style={styles.cardHeader}>
+                                    <Text style={styles.orderTitle}>
+                                        {typeof item.title === "object" ? JSON.stringify(item.title) : item.title}
+                                    </Text>
+                                    <Text style={styles.status}>
+                                        {typeof item.status === "object" ? JSON.stringify(item.status) : item.status}
+                                    </Text>
+                                </View>
+                                <View style={styles.detailRow}>
+                                    <Ionicons name="document-text-outline" size={16} color="#333" />
+                                    <Text style={styles.detailText}>
+                                        {item.description || "N/A"}
+                                    </Text>
+                                </View>
+                                <View style={styles.detailRow}>
+                                    <Ionicons name="time-outline" size={16} color="#333" />
+                                    <Text style={styles.detailText}>{item.scheduled_date
+                                        ? new Date(item.scheduled_date).toDateString()
+                                        : "N/A"}</Text>
+                                </View>
+
+                                {/* Notes Section */}
+                                <View style={styles.detailRow}>
+                                    <Ionicons name="clipboard-outline" size={16} color="#333" />
+                                    <Text style={styles.detailText}>Notes:</Text>
+                                </View>
+
+                                {Array.isArray(item.notes) && item.notes.length > 0 ? (
+                                    <View style={styles.notesContainer}>
+                                        {item.notes.map((note, index) => (
+                                            <Text key={note._id || index} style={styles.noteItem}>
+                                                • {note.body} ({new Date(note.date).toDateString()})
+                                            </Text>
+                                        ))}
+                                    </View>
+                                ) : (
+                                    <Text style={styles.noNotes}>No notes available</Text>
+                                )}
+
                             </View>
-                            <Text style={styles.date}>
-                                Scheduled: {item.scheduled_date ? new Date(item.scheduled_date).toDateString() : "N/A"}
-                            </Text>
-                            {item.notes ? <Text style={styles.notes}>Notes: {item.notes}</Text> : null}
-                        </View>
-                    )}
+                        );
+                    }}
+
                     contentContainerStyle={{ padding: 16 }}
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>No records found</Text>
+                        </View>
+                    }
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    }
                 />
 
                 {/* Floating Button */}
@@ -144,12 +160,12 @@ const styles = StyleSheet.create({
     },
     card: {
         backgroundColor: "#fff",
-        padding: 16,
-        marginHorizontal: 8,  // only tiny margin at sides
-        marginBottom: 16,
-        borderRadius: 16,
-        elevation: 5, // Android shadow
-        shadowColor: "#000", // iOS shadow
+        padding: responsiveWidth(8),
+        marginHorizontal: responsiveWidth(2),
+        marginBottom: responsiveHeight(2),
+        borderRadius: responsiveWidth(4),
+        elevation: 5,
+        shadowColor: "#000",
         shadowOpacity: 0.1,
         shadowOffset: { width: 0, height: 2 },
         shadowRadius: 6,
@@ -160,9 +176,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 8,
     },
-    orderTitle: { fontSize: 20, fontWeight: "700", color: "#333" },
+    orderTitle: { fontSize: 16, fontWeight: "600", color: "#333" },
     status: { fontSize: 15, color: "#007bff", fontWeight: "500" },
-    date: { fontSize: 15, color: "#555", marginTop: 6 },
+    date: { fontSize: 15, fontWeight: "700", color: "#555", marginTop: 6 },
+    description: { fontSize: 15, color: "#555", marginTop: 6 },
     notes: { fontSize: 14, marginTop: 8, color: "#666", lineHeight: 20 },
     fab: {
         position: "absolute",
@@ -175,10 +192,51 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         elevation: 6,
-        shadowColor: "#000", shadowOpacity: 0.3, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4,
-    }
+        shadowColor: "#000",
+        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: responsiveHeight(20),
+    },
+    emptyText: {
+        fontSize: responsiveFontSize(2),
+        color: "#fff",
+        fontWeight: "600",
+    },
+    detailRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 6,
+    },
+    detailText: {
+        color: "#333",
+        fontSize: 14,
+        marginLeft: 6,
+        fontWeight: "700"
+    },
+    notesContainer: {
+        marginTop: 4,
+        marginLeft: 24, // aligns under "Notes:" label
+    },
+    noteItem: {
+        fontSize: 14,
+        color: "#555",
+        marginBottom: 4,
+        lineHeight: 20,
+    },
+    noNotes: {
+        fontSize: 14,
+        color: "#999",
+        marginTop: 4,
+        marginLeft: 24,
+        fontStyle: "italic",
+    },
+
 });
-
-
 
 export default WorkOrderListScreen;

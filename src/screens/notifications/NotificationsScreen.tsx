@@ -11,6 +11,10 @@ import {
 import { NotificationContext } from "../../context/NotificationContext";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
+import LinearGradient from "react-native-linear-gradient";
+
+
+
 
 export default function NotificationsScreen() {
   const { notifications, clearNotification, clearAll, markAllRead } =
@@ -35,45 +39,52 @@ export default function NotificationsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        {/* Left group: back + title */}
-        <View style={styles.leftGroup}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={26} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Notifications</Text>
+    <LinearGradient
+      colors={["#4c669f", "#415580ff", "#394b7dff"]}
+      style={styles.container}
+    >
+      {/* your screen content */}
+
+      <SafeAreaView style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          {/* Left group: back + title */}
+          <View style={styles.leftGroup}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={26} color="#fdf8f8ff" />
+            </TouchableOpacity>
+            <Text style={styles.title}>Notifications</Text>
+          </View>
+
+          {/* Right side: Clear All */}
+          {notifications.length > 0 && (
+            <TouchableOpacity onPress={clearAll} style={styles.clearAllBtn}>
+              <Text style={styles.clearAllText}>Clear All</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Right side: Clear All */}
-        {notifications.length > 0 && (
-          <TouchableOpacity onPress={clearAll} style={styles.clearAllBtn}>
-            <Text style={styles.clearAllText}>Clear All</Text>
-          </TouchableOpacity>
+        {/* Body */}
+        {notifications.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="notifications-off-outline" size={60} color="#bbb" />
+            <Text style={styles.emptyText}>No notifications yet</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={notifications}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          />
         )}
-      </View>
-
-      {/* Body */}
-      {notifications.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="notifications-off-outline" size={60} color="#bbb" />
-          <Text style={styles.emptyText}>No notifications yet</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={notifications}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 20 }}
-        />
-      )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, },
 
   // Header
   header: {
@@ -81,11 +92,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 15,
-    paddingVertical: 12,
-    backgroundColor: "#f8f9fa",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    paddingVertical: 15,
+    backgroundColor: "transparent",
   },
+
   leftGroup: {
     flexDirection: "row",
     alignItems: "center",
@@ -96,10 +106,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#222",
+    color: "#fff",   // 👈 White text here
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 4,
   },
   clearAllBtn: { padding: 5 },
-  clearAllText: { color: "#d9534f", fontSize: 14, fontWeight: "500" },
+  clearAllText: { color: "#fcf9f9ff", fontSize: 14, fontWeight: "500" },
 
 
   // Empty state

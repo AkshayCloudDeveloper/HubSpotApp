@@ -30,6 +30,13 @@ export default function CustomerStack() {
                 headerShown: true,
                 headerTitleAlign: "center",
                 title: "Create Work Order",
+                headerTitleStyle: {
+                    color: "#fff",   // 👈 white text
+                },
+                headerTintColor: "#fff",
+                headerStyle: {
+                    backgroundColor: "#4c669f", // solid color (use LinearGradient for fancy bg)
+                },
             }}
             />
         </Stack.Navigator>

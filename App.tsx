@@ -27,7 +27,7 @@ export type RootStackParamList = {
   TechnicianStack: undefined;
   UpdateProfile: undefined;
   NotificationsScreen: undefined;
-  AppDrawer:  undefined;
+  AppDrawer: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -69,7 +69,7 @@ export default function App() {
 // ---------------- Main Navigator ----------------
 function MainNavigator() {
   const { userToken, isCheckingAuth, user } = useAuth(); // ✅ get user role here
-console.log(user)
+  console.log(user)
   if (isCheckingAuth) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -106,13 +106,18 @@ console.log(user)
                 <Ionicons
                   name="arrow-back"
                   size={24}
-                  color="#030000"
-                  style={{ marginRight: 8 }} 
+                  color="#fff"
+                  style={{ marginRight: 8 }}
                   onPress={() => navigation.goBack()}
                 />
               ),
-              headerStyle: { backgroundColor: "#fff" },
-              headerTintColor: "#030000",
+              headerTitleStyle: {
+                color: "#fff",   // 👈 white text
+              },
+              headerTintColor: "#fff",
+              headerStyle: {
+                backgroundColor: "#4c669f", // solid color (use LinearGradient for fancy bg)
+              },
             })}
           />
           <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} />

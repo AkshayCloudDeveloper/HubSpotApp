@@ -23,7 +23,7 @@ export default function UpdateProfileScreen() {
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
 
     // Reusable fetch function
@@ -59,7 +59,7 @@ export default function UpdateProfileScreen() {
             Alert.alert("Error", "Passwords do not match");
             return;
         }
-
+        setLoading(true);
         try {
             const res = await updateProfile({
                 name,
@@ -77,10 +77,13 @@ export default function UpdateProfileScreen() {
         } catch (err: any) {
             console.error("Update error:", err.response);
             Alert.alert("Error", err.response?.data?.message || "Something went wrong");
+        }finally {
+            setLoading(false);
+            setRefreshing(false);
         }
     };
 
-    if (loading && !refreshing) {
+    if (loading) {
         return (
             <View style={styles.container}>
                 <ActivityIndicator size="large" color="#4a90e2" />
@@ -89,6 +92,7 @@ export default function UpdateProfileScreen() {
     }
 
     return (
+
         <ScrollView
             style={styles.container}
             refreshControl={
@@ -182,7 +186,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#f9f9f9",
     },
     button: {
-        backgroundColor: "#007AFF",
+        backgroundColor: "#4c669f",
         padding: 15,
         borderRadius: 10,
         alignItems: "center",

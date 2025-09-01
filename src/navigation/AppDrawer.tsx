@@ -9,6 +9,7 @@ import CustomDrawerContent from './CustomDrawerContent';
 import { useAuth } from '../context/AuthContext';
 import { BellIcon } from '../components/BellIcon';
 
+
 type DrawerParamList = {
   Home: undefined;
   Profile: undefined;
@@ -31,14 +32,18 @@ export default function AppDrawer() {
       initialRouteName="Home"
       drawerContent={(props: DrawerContentComponentProps) => (
         <CustomDrawerContent {...props} />
+         // 👈 drawer panel bg
       )}
       screenOptions={{
         headerShown: false,
-        headerStyle: {
-          height: 60, // decrease height (default ~80 on iOS)
-        },
         // headerRight: () => <BellIcon navigation={navigation} />,
+        drawerStyle: {
+          backgroundColor: "#576ea0ff",  // 👈 drawer panel bg
+        },
+        drawerActiveTintColor: "#fff",
+        drawerInactiveTintColor: "#ddd",
       }}
+      
 
     >
       <Drawer.Screen
@@ -47,7 +52,15 @@ export default function AppDrawer() {
       <Drawer.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ headerTitle: 'Profile', headerShown: true }}
+        options={{
+          headerTitle: 'Profile', headerShown: true, headerStyle: {
+            backgroundColor: "#4c669f", // solid color (use LinearGradient for fancy bg)
+          },
+          headerTitleStyle: {
+            color: "#fff",   // 👈 white text
+          },
+          headerTintColor: "#fff",
+        }}
       />
       {/* Add this screen only for admin users */}
       {user?.role === 'customer' && (

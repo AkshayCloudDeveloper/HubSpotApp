@@ -92,12 +92,27 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       });
       registerDevice();
     } catch (err: any) {
-      setApiError(err.response?.data?.message || "Registration failed");
+      console.log("API Error:", JSON.stringify(err, null, 2));
+
+      let errorMessage = "Registration failed";
+
+      if (err.response) {
+        // Backend responded with an error
+        errorMessage = err.response.data?.message || err.response.data?.error || errorMessage;
+      } else if (err.request) {
+        console.log("Request Error:", err.request);
+        // No response received
+        errorMessage = "No response from server. Please try again.";
+      } else {
+        // Something went wrong in setting up the request
+        errorMessage = err.message;
+      }
+
+      setApiError(errorMessage);
       Toast.show({
         type: 'error',
-        text1: err.response?.data?.message || 'Registration failed',
+        text1: errorMessage,
       });
-      console.log(err)
     }
   };
 
@@ -198,7 +213,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
   },
-  errorText: { color: "red", margin:4, marginBottom: 10, marginTop: -5 },
+  errorText: { color: "red", margin: 4, marginBottom: 10, marginTop: -5 },
   apiErrorText: { color: "red", marginTop: 10, textAlign: "center" },
 });
 

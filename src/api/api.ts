@@ -18,6 +18,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+console.log('API Base URL:', API_BASE_URL);
 
 api.interceptors.request.use(async (config) => {
   try {

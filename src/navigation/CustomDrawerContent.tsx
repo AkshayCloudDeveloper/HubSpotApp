@@ -67,7 +67,7 @@ function CustomDrawerContent(props: any & CustomDrawerProps) {
       <DrawerItemList {...props} />
 
       {/* Custom Logout button */}
-      <DrawerItem label="Logout" onPress={handleLogout} />
+      <DrawerItem label="Logout" labelStyle={{ color: "#d6d6d6ff" }}  onPress={handleLogout} />
     </DrawerContentScrollView>
   );
 }
