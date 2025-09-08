@@ -34,10 +34,16 @@ api.interceptors.request.use(async (config) => {
 
 // Optionally, you can add interceptors for auth tokens etc.
 api.interceptors.response.use(
-  
+
   response => response,
   async (error) => {
-    if (error.response?.status === 401  && logoutFn) {
+    if (error.response?.status === 401 && logoutFn) {
+      await AsyncStorage.multiRemove(['authToken', 'refreshToken']);
+      // Optional: add event emitter or navigation reset here
+      await logoutFn();
+      resetToLogin();
+    }
+    if (error.response?.status === 403 && logoutFn) {
       await AsyncStorage.multiRemove(['authToken', 'refreshToken']);
       // Optional: add event emitter or navigation reset here
       await logoutFn();

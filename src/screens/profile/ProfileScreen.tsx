@@ -17,6 +17,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  console.log(user)
   const navigation = useNavigation();
 
   const fetchUser = async () => {
@@ -89,6 +90,52 @@ export default function ProfileScreen() {
       ) : (
         <Text style={styles.text}>No user data found</Text>
       )}
+
+      {/* Technician Card */}
+      {/* {user?.role === "technician" && user.technician && ( */}
+        <View style={styles.card}>
+          <Text style={styles.title}>Technician Details</Text>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Technician ID:</Text>
+            <Text style={styles.value}></Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Territory:</Text>
+            <Text style={styles.value}></Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Skills:</Text>
+            <Text style={styles.value}>
+             
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Availability:</Text>
+            <Text style={styles.value}>
+              
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Operating Hours:</Text>
+            <Text style={styles.value}>
+              
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate("UpdateTechnician" as never)}
+          >
+            <Text style={styles.buttonText}>Update Technician Details</Text>
+          </TouchableOpacity>
+        </View>
+      {/* )} */}
+
     </ScrollView>
   );
 }

@@ -17,7 +17,7 @@ import TechnicianStack from './src/navigation/TechnicianStack';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { setLogoutFunction } from "./src/api/api";
 import { NotificationProvider } from "./src/context/NotificationContext";
-import { useNotificationListener, requestUserPermission } from "./PushNotificationService";
+import { useNotificationListener, requestUserPermission, requestPermissions } from "./PushNotificationService";
 import AppDrawer from "./src/navigation/AppDrawer"
 
 export type RootStackParamList = {
@@ -45,6 +45,7 @@ const SetupAuth = ({ children }: { children: React.ReactNode }) => {
 const SetupNotifications = ({ children }: { children: React.ReactNode }) => {
   requestUserPermission();
   useNotificationListener();
+  requestPermissions();
   return <>{children}</>;
 };
 
@@ -69,7 +70,6 @@ export default function App() {
 // ---------------- Main Navigator ----------------
 function MainNavigator() {
   const { userToken, isCheckingAuth, user } = useAuth(); // ✅ get user role here
-  console.log(user)
   if (isCheckingAuth) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

@@ -13,6 +13,7 @@ import {
 import React, { useEffect, useContext } from "react";
 import { Alert } from "react-native";
 import { NotificationContext } from "./src/context/NotificationContext";
+import { PermissionsAndroid } from "react-native";
 
 const messaging = getMessaging(getApp());
 
@@ -27,9 +28,15 @@ export async function requestUserPermission() {
   }
 }
 
+export async function requestPermissions() {
+  await PermissionsAndroid.requestMultiple([
+    PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+    PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+  ]);
+}
+
 export async function getFCMToken() {
   const token = await getToken(messaging);
-  console.log("FCM Token:", token);
   return token;
 }
 

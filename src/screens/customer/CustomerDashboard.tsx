@@ -1,54 +1,93 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import React, { useCallback, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl } from "react-native";
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
+import api from "../../api/api";
+import { useFocusEffect } from "@react-navigation/native";
 
-// Define your stack's param list
 type RootStackParamList = {
   CustomerDashboard: undefined;
   CreateWorkOrder: undefined;
   Appointments: undefined;
-  // add other screens as needed
+  ServiceRequest: undefined;
 };
 
 type CustomerDashboardNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  'CustomerDashboard',
-  'Appointments'
+  'CustomerDashboard'
 >;
 
-type CustomerDashboardRouteProp = RouteProp<RootStackParamList, 'CustomerDashboard'>;
+type WorkOrder = {
+  _id: string;
+  title: string;
+  description?: string;
+  status: string;
+  priority?: string;
+  scheduled_date?: string;
+  assigned_technician_id?: number;
+  customer_id?: number;
+  asset_id?: number;
+  notes?: string;
+};
 
 type RequestItem = {
   id: string;
   title: string;
-  status?: string; // optional if you plan to add this later
+  status?: string;
 };
 
+const CustomerDashboard = ({ navigation }: { navigation: CustomerDashboardNavigationProp }) => {
+  const [count, setCount] = useState("");
+  const [orders, setOrders] = useState<RequestItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-const CustomerDashboard = ({
-  navigation,
-}: {
-  navigation: CustomerDashboardNavigationProp;
-}) => {
-  // Fake data for demo (replace with API data)
-  const recentRequests: RequestItem[] = [
-  { id: "1", title: "AC Repair" },
-  { id: "2", title: "Washing Machine Service" },
-  { id: "3", title: "Plumbing Work" },
-];
+  const fetchConfirmedCount = async () => {
+    try {
+      const res = await api.get("/workorders/count/confirmed");
+      setCount(res.data.confirmedCount);
+    } catch (err) {
+      console.error("Error fetching confirmed count", err);
+    }
+  };
 
-const renderRequest = ({ item }: { item: RequestItem }) => (
-  <View style={styles.card}>
-    <View style={styles.cardHeader}>
-      <Text style={styles.cardTitle}>{item.title}</Text>
-      <Text style={styles.cardStatus}>{item.status ?? "Pending"}</Text>
+  const fetchOrders = async () => {
+    try {
+      const res = await api.get("/workorders?status=pending");
+      setOrders(res.data);
+    } catch (err) {
+      console.error("Error fetching work orders", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchConfirmedCount();
+    fetchOrders();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchConfirmedCount();
+      fetchOrders();
+    }, [])
+  );
+
+  const renderRequest = ({ item }: { item: RequestItem }) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.cardTitle}>{item.title}</Text>
+        <Text style={styles.cardStatus}>{item.status ?? "Pending"}</Text>
+      </View>
+      <Icon name="wrench" size={32} color="#4F8EF7" />
     </View>
-    <Icon name="wrench" size={32} color="#4F8EF7" />
-  </View>
-);
+  );
 
   return (
     <LinearGradient
@@ -59,23 +98,50 @@ const renderRequest = ({ item }: { item: RequestItem }) => (
 
       {/* Summary Section */}
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryText}>You have 2 upcoming appointments</Text>
+
+        <Text style={styles.summaryText}>You have {count} upcoming appointments</Text>
         <TouchableOpacity
           style={styles.summaryBtn}
           onPress={() => navigation.navigate("Appointments")}
         >
           <Text style={styles.summaryBtnText}>View</Text>
         </TouchableOpacity>
+
       </View>
 
       {/* Recent Requests */}
-      <Text style={styles.sectionTitle}>Recent Service Requests</Text>
-      <FlatList
-        data={recentRequests}
-        keyExtractor={(item) => item.id}
-        renderItem={renderRequest}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      />
+      <View>
+        <Text style={styles.sectionTitle}>Recent Service Requests</Text>
+
+        <FlatList
+          data={orders}
+          keyExtractor={(item) => String(item.id)} // ✅ ensures unique string keys
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("ServiceRequest")}
+              activeOpacity={0.9}
+              style={{ marginBottom: 10 }}
+            >
+              {renderRequest({ item })}
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#fff"
+            />
+          }
+          ListEmptyComponent={
+            <Text style={{ color: "#fff", textAlign: "center", marginTop: 20 }}>
+              No pending work orders.
+            </Text>
+          }
+        />
+      </View>
+
+
 
       {/* Floating Button */}
       <TouchableOpacity
@@ -117,8 +183,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    elevation: 4, // for Android shadow
-    shadowColor: "#000", shadowOpacity: 0.2, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, // iOS shadow
+    elevation: 4,
+    shadowColor: "#000", shadowOpacity: 0.2, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4,
   },
   cardHeader: { flexDirection: "column" },
   cardTitle: { fontSize: 16, fontWeight: "600" },

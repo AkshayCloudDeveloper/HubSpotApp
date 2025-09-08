@@ -7,7 +7,7 @@ import TechnicianStack from './TechnicianStack';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import CustomDrawerContent from './CustomDrawerContent';
 import { useAuth } from '../context/AuthContext';
-import { BellIcon } from '../components/BellIcon';
+import CompledtedWorkOrders from '../screens/customer/CompletedWorkOrders';
 
 
 type DrawerParamList = {
@@ -15,6 +15,7 @@ type DrawerParamList = {
   Profile: undefined;
   Customer: undefined;
   TechnicianReports: undefined;
+  CompledtedWorkOrders: undefined;
 };
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
@@ -62,15 +63,22 @@ export default function AppDrawer() {
           headerTintColor: "#fff",
         }}
       />
-      {/* Add this screen only for admin users */}
       {user?.role === 'customer' && (
-        <Drawer.Screen
-          name="Customer"
-          component={ProfileScreen}
-          options={{ headerTitle: 'Admin Panel' }}
-        />
+          <Drawer.Screen
+        name="CompledtedWorkOrders"
+        component={CompledtedWorkOrders}
+        options={{
+          headerTitle: 'Compledted Work Orders', drawerLabel: "Completed Work Orders", headerShown: true, headerStyle: {
+            backgroundColor: "#4c669f", // solid color (use LinearGradient for fancy bg)
+          },
+          headerTitleStyle: {
+            color: "#fff",   // 👈 white text
+          },
+          headerTintColor: "#fff",
+        }}
+      />
       )}
-
+    
       {/* Add more role-based screens
       {user?.role === 'technician' && (
         <Drawer.Screen

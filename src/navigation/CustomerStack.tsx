@@ -7,7 +7,7 @@ import CustomerBottomTabs from '../screens/customer/tabs/CustomerBottomTabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import CreateWorkOrderScreen from "../screens/customer/services/CreateWorkOrderScreen";
 import { BellIcon } from '../components/BellIcon';
-
+import WorkOrderDetailScreen from '../screens/customer/services/WorkOrderDetailScreen';
 
 export type CustomerStackParamList = {
     CustomerDashboard: undefined;
@@ -15,9 +15,22 @@ export type CustomerStackParamList = {
     CustomerAppointments: undefined;
     CustomerTabs: undefined;
     CreateWorkOrder: undefined;
+    WorkOrderDetail: { id: string };
 };
 
 const Stack = createNativeStackNavigator<CustomerStackParamList>();
+
+const defaultHeaderOptions = {
+    headerShown: true,
+    headerTitleAlign: "center" as const,
+    headerTitleStyle: {
+        color: "#fff",
+    },
+    headerTintColor: "#fff",
+    headerStyle: {
+        backgroundColor: "#4c669f",
+    },
+};
 
 export default function CustomerStack() {
     return (
@@ -26,17 +39,13 @@ export default function CustomerStack() {
             <Stack.Screen name="CustomerDashboard" component={CustomerDashboard} />
             <Stack.Screen name="ServiceRequest" component={ServiceRequestScreen} />
             <Stack.Screen name="CustomerAppointments" component={CustomerAppointments} />
+            <Stack.Screen name="WorkOrderDetail" component={WorkOrderDetailScreen} options={{
+                ...defaultHeaderOptions,
+                title: "Work Order Details", // override only title
+            }} />
             <Stack.Screen name="CreateWorkOrder" component={CreateWorkOrderScreen} options={{
-                headerShown: true,
-                headerTitleAlign: "center",
+                ...defaultHeaderOptions,
                 title: "Create Work Order",
-                headerTitleStyle: {
-                    color: "#fff",   // 👈 white text
-                },
-                headerTintColor: "#fff",
-                headerStyle: {
-                    backgroundColor: "#4c669f", // solid color (use LinearGradient for fancy bg)
-                },
             }}
             />
         </Stack.Navigator>

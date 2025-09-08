@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from "react";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { TouchableOpacity } from 'react-native';
@@ -8,19 +8,45 @@ import TechnicianAppointments from '../TechnicianAppointments';
 import WorkOrderDetails from '../WorkOrderDetails';
 import { BellIcon } from '../../../components/BellIcon';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Tab = createBottomTabNavigator();
 
 export default function TechnicianBottomTabs() {
   const navigation = useNavigation<any>();
+  const [user, setUser] = useState("Technician");
+
+  const loadUser = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser); // ✅ parse JSON
+        setUser(user.name || "Technician"); // Use user name or default to "Technician"
+      } else {
+        console.log("No user found in storage");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error loading user:", error);
+      return null;
+    }
+  };
+
+  // Usage
+  useEffect(() => {
+    loadUser();
+  }, []);
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: true,
         headerStyle: {
-          height: 60, // decrease height (default ~80 on iOS)
+          shadowColor: 'transparent',
+          backgroundColor: '#4c669f',
+          borderBottomRightRadius: 20,
         },
+        headerTintColor: '#fff',
         tabBarIcon: ({ color, size }) => {
           let iconName = '';
 
@@ -35,13 +61,18 @@ export default function TechnicianBottomTabs() {
             onPress={() => navigation.openDrawer()} // 👈 Opens Drawer
             style={{ marginLeft: 15 }}
           >
-            <Ionicons name="menu" size={28} color="#000" />
+            <Ionicons name="menu" size={28} color="#f6f6f6ff" />
           </TouchableOpacity>
         ),
         headerRight: () => <BellIcon navigation={navigation} />,
       })}
     >
-      <Tab.Screen name="Dashboard" component={TechnicianDashboard} />
+      <Tab.Screen name="Dashboard" component={TechnicianDashboard} options={{
+        title: "Hello, " + user, headerTitleStyle: {
+          fontStyle: "italic", // italic text
+        },
+        tabBarLabel: "Dashboard",
+      }} />
       <Tab.Screen name="Appointments" component={TechnicianAppointments} />
       <Tab.Screen name="WorkOrders" component={WorkOrderDetails} />
     </Tab.Navigator>

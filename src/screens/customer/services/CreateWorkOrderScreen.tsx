@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
-   ActivityIndicator,
+  ActivityIndicator,
 } from "react-native";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
@@ -36,71 +36,100 @@ const CreateWorkOrderScreen: React.FC = () => {
   const [attachments, setAttachments] = useState<any[]>([]);
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  // --- inside your component state ---
+  const [customerDate, setCustomerDate] = useState<Date>(new Date());
+  const [showCustomerDatePicker, setShowCustomerDatePicker] = useState(false);
+  const [customerTime, setCustomerTime] = useState<Date>(new Date());
+  const [showCustomerTimePicker, setShowCustomerTimePicker] = useState(false);
+
+  // Location fields
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [country, setCountry] = useState("");
+
 
 
   const handleCreateOrder = async () => {
     try {
-      // ✅ Validate required fields
-      if (!selectedService || !description) {
-        Alert.alert("⚠️ Missing Fields", "Service and description are required");
+      if (!selectedService) {
+        Alert.alert("⚠️ Missing Field", "Please select a service");
+        return;
+      }
+      if (!description.trim()) {
+        Alert.alert("⚠️ Missing Field", "Please enter a description");
+        return;
+      }
+      if (!addressLine1.trim() || !city.trim() || !state.trim() || !postalCode.trim() || !country.trim()) {
+        Alert.alert("⚠️ Missing Address", "Please fill in all required address fields");
+        return;
+      }
+      if (!customerDate || !customerTime) {
+        Alert.alert("⚠️ Missing Date/Time", "Please select preferred date and time");
         return;
       }
       setLoading(true);
-      // ✅ Build FormData
+
       const formData = new FormData();
       formData.append("title", selectedService.name);
       formData.append("service", selectedService._id || "");
       formData.append("description", description);
+
+      // Old field (keep for backward compatibility if backend still uses it)
       formData.append("scheduled_date", scheduledDate?.toISOString() || "");
+
+      // ✅ New customer scheduling fields
+      formData.append("scheduled_customer[date]", customerDate.toISOString());
+      formData.append(
+        "scheduled_customer[time]",
+        customerTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      );
+
+      // ✅ Location fields
+      formData.append("location[address_line1]", addressLine1);
+      formData.append("location[address_line2]", addressLine2);
+      formData.append("location[city]", city);
+      formData.append("location[state]", state);
+      formData.append("location[postal_code]", postalCode);
+      formData.append("location[country]", country);
+
       formData.append("asset_id", asset || "");
       formData.append("notes", notes || "");
 
-      // ✅ Append multiple images
+      // ✅ Attachments (unchanged)
       attachments.forEach((image, index) => {
-        // Use correct keys depending on picker
         const uri = image.uri || image.url;
         const name = image.fileName || image.filename || `photo_${index}.jpg`;
         const type = image.type || "image/jpeg";
-
         if (uri) {
-          formData.append("attachments", {
-            uri,
-            type,
-            name,
-          } as any);
+          formData.append("attachments", { uri, type, name } as any);
         }
       });
-      // ✅ API call
+
       const res = await api.post("/workorders", formData, {
         headers: {
           Accept: "application/json",
           "Content-Type": "multipart/form-data",
         },
-        // ✅ Use async storage for auth token if needed
-        // Authorization: `Bearer ${await AsyncStorage.getItem("authToken")}`,
       });
 
-      console.log("✅ Work order created:", res.data);
       Alert.alert("✅ Success", "Work order created successfully");
-      navigation.navigate("CustomerTabs", {
-        screen: "ServiceRequest",
-      });
+      navigation.navigate("CustomerTabs", { screen: "ServiceRequest" });
     } catch (err: any) {
-      // ✅ Better error handling
       if (err.response) {
-        console.error("❌ Backend error:", err.response.data);
         Alert.alert("❌ Error", err.response.data?.message || "Failed to create work order");
       } else if (err.request) {
-        console.error("❌ No response from server:", err.request);
         Alert.alert("❌ Error", "No response from server");
       } else {
-        console.error("❌ Request setup error:", err.message);
         Alert.alert("❌ Error", err.message);
       }
     } finally {
-      setLoading(false); // hide loader
+      setLoading(false);
     }
   };
+
 
 
   const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -144,13 +173,7 @@ const CreateWorkOrderScreen: React.FC = () => {
   return (
     <LinearGradient colors={["#4c669f", "#415580", "#394b7d"]} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {loading && (
-          <View style={styles.loadingOverlay}>
-            <Text style={{ color: "#fff", fontSize: 16 }}>Submitting...</Text>
-             <ActivityIndicator size="large" color="#4a90e2" />
-          </View>
-        )}
-
+        
         {/* Title */}
         <View style={styles.card}>
           <Text style={styles.label}>Service *</Text>
@@ -178,22 +201,101 @@ const CreateWorkOrderScreen: React.FC = () => {
           />
         </View>
 
-
-        {/* Scheduled Date */}
+        {/* Customer Requested Date & Time */}
         <View style={styles.card}>
-          <Text style={styles.label}>Scheduled Date</Text>
-          <TouchableOpacity style={styles.datePicker} onPress={() => setShowDatePicker(true)}>
-            <Text style={styles.dateText}>{scheduledDate.toDateString()}</Text>
+          <Text style={styles.label}>Preferred Date</Text>
+          <TouchableOpacity
+            style={styles.datePicker}
+            onPress={() => setShowCustomerDatePicker(true)}
+          >
+            <Text style={styles.dateText}>
+              {customerDate.toDateString()}
+            </Text>
           </TouchableOpacity>
-          {showDatePicker && (
+          {showCustomerDatePicker && (
             <DateTimePicker
-              value={scheduledDate}
+              value={customerDate}
               mode="date"
               display="default"
-              onChange={onDateChange}
+              onChange={(event, date) => {
+                setShowCustomerDatePicker(false);
+                if (date) setCustomerDate(date);
+              }}
+            />
+          )}
+
+          <Text style={[styles.label, { marginTop: 10 }]}>Preferred Time</Text>
+          <TouchableOpacity
+            style={styles.datePicker}
+            onPress={() => setShowCustomerTimePicker(true)}
+          >
+            <Text style={styles.dateText}>
+              {customerTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </Text>
+          </TouchableOpacity>
+          {showCustomerTimePicker && (
+            <DateTimePicker
+              value={customerTime}
+              mode="time"
+              display="default"
+              onChange={(event, date) => {
+                setShowCustomerTimePicker(false);
+                if (date) setCustomerTime(date);
+              }}
             />
           )}
         </View>
+
+        
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <Text style={{ color: "#fff", fontSize: 16 }}>Submitting...</Text>
+            <ActivityIndicator size="large" color="#4a90e2" />
+          </View>
+        )}
+
+        {/* Location */}
+        <View style={styles.card}>
+          <Text style={styles.label}>Location / Address</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Address Line 1"
+            value={addressLine1}
+            onChangeText={setAddressLine1}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Address Line 2"
+            value={addressLine2}
+            onChangeText={setAddressLine2}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="City"
+            value={city}
+            onChangeText={setCity}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="State"
+            value={state}
+            onChangeText={setState}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Postal Code"
+            keyboardType="numeric"
+            value={postalCode}
+            onChangeText={setPostalCode}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Country"
+            value={country}
+            onChangeText={setCountry}
+          />
+        </View>
+
 
         {/* Asset */}
         <View style={styles.card}>
@@ -292,6 +394,7 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     borderRadius: 10,
     padding: 12,
+    marginBottom: 7,
     backgroundColor: "#fefefe",
     fontSize: 15,
   },
@@ -372,7 +475,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
-  },
+  }
 });
 
 export default CreateWorkOrderScreen;

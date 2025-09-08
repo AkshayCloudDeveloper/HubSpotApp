@@ -10,7 +10,7 @@ import {
     RefreshControl,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import api from "../../../api/api";
+import api from "../../api/api";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import LinearGradient from "react-native-linear-gradient";
@@ -51,7 +51,7 @@ type RootStackParamList = {
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
-const WorkOrderListScreen = () => {
+const CompletedWorkOrders = () => {
     const navigation = useNavigation<NavigationProp>();
     const [orders, setOrders] = useState<WorkOrder[]>([]);
     const [loading, setLoading] = useState(true);
@@ -65,7 +65,7 @@ const WorkOrderListScreen = () => {
 
     const fetchOrders = async () => {
         try {
-            const res = await api.get("/workorders?status=pending");
+            const res = await api.get("/workorders?status=completed");
             setOrders(res.data);
         } catch (err) {
             console.error("Error fetching work orders", err);
@@ -114,12 +114,12 @@ const WorkOrderListScreen = () => {
                             : "No address available";
 
                         return (
-                            <TouchableOpacity
-                                onPress={() =>
-                                    navigation.navigate("WorkOrderDetail", { id: item._id })
-                                }
-                                activeOpacity={0.9}
-                            >
+                            // <TouchableOpacity
+                            //     onPress={() =>
+                            //         navigation.navigate("WorkOrderDetail", { id: item._id })
+                            //     }
+                            //     activeOpacity={0.9}
+                            // >
                                 <View style={styles.card}>
                                     {/* ✅ Ticket ID */}
                                     <Text style={styles.ticketId}>#: {item.ticket_id}</Text>
@@ -157,7 +157,7 @@ const WorkOrderListScreen = () => {
                                         <Text style={styles.detailText}>{fullAddress}</Text>
                                     </View>
                                 </View>
-                            </TouchableOpacity>
+                            // </TouchableOpacity>
                         );
                     }}
                     contentContainerStyle={{ padding: 16 }}
@@ -171,10 +171,6 @@ const WorkOrderListScreen = () => {
                     }
                 />
 
-                {/* Floating Button */}
-                <TouchableOpacity style={styles.fab} onPress={handleCreateWorkOrder}>
-                    <Icon name="add" size={28} color="#fff" />
-                </TouchableOpacity>
             </LinearGradient>
         </View>
     );
@@ -265,4 +261,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default WorkOrderListScreen;
+export default CompletedWorkOrders;

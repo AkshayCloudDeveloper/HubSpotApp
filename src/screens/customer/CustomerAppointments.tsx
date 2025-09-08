@@ -1,66 +1,47 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   SafeAreaView,
-  StatusBar,
+  RefreshControl,
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import api from "../../api/api"; // adjust path if needed
+import { useFocusEffect } from "@react-navigation/native";
+
 
 // ---- 1. Appointment item type ----
 type AppointmentItem = {
   id: string;
   service: string;
-  date: string;
-  time: string;
+  customerDate: string;
+  customerTime: string;
+  technicianDate: string;
+  technicianTime: string;
   technician: string;
-  status: "Confirmed" | "Pending" | "Completed";
+  status: "Confirmed" | "InProgress";
+  ticket_id: string;
 };
 
-// ---- 2. Dummy Data ----
-const CustomerAppointments: AppointmentItem[] = [
-  {
-    id: "1",
-    service: "AC Repair",
-    date: "Aug 22, 2025",
-    time: "10:00 AM",
-    technician: "John Doe",
-    status: "Confirmed",
-  },
-  {
-    id: "2",
-    service: "Washing Machine Service",
-    date: "Aug 24, 2025",
-    time: "3:30 PM",
-    technician: "Alice Smith",
-    status: "Pending",
-  },
-  {
-    id: "3",
-    service: "Plumbing Work",
-    date: "Aug 28, 2025",
-    time: "1:00 PM",
-    technician: "David Lee",
-    status: "Completed",
-  },
-];
-
-// ---- 3. Status color mapping ----
+// ---- 2. Status color mapping ----
 const statusColors: Record<AppointmentItem["status"], string> = {
   Confirmed: "#81c784", // soft green
-  Pending: "#ffeb3b",   // soft yellow
-  Completed: "#64b5f6", // soft blue
+  InProgress: "#ffd67dff", // soft blue
 };
 
-// ---- 4. Render each appointment card ----
+// ---- 3. Render each appointment card ----
 const renderAppointment = ({ item }: { item: AppointmentItem }) => (
   <LinearGradient
-    colors={["#f6f9fbff", "#eff5ffff"]} // light blue → white
+    colors={["#f6f9fbff", "#eff5ffff"]}
     style={styles.card}
   >
+    <View>
+      <Text style={styles.ticketId}>#: {item.ticket_id}</Text>
+    </View>
+
     <View style={styles.cardHeader}>
       <Text style={styles.serviceText}>{item.service}</Text>
       <View
@@ -73,14 +54,20 @@ const renderAppointment = ({ item }: { item: AppointmentItem }) => (
       </View>
     </View>
 
-    <View style={styles.detailRow}>
-      <Ionicons name="calendar-outline" size={16} color="#333" />
-      <Text style={styles.detailText}>{item.date}</Text>
+    {/* Technician Scheduled */}
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Technician Scheduled</Text>
+      <View style={styles.detailRow}>
+        <Ionicons name="calendar-outline" size={16} color="#333" />
+        <Text style={styles.detailText}>{item.technicianDate}</Text>
+      </View>
+      <View style={styles.detailRow}>
+        <Ionicons name="time-outline" size={16} color="#333" />
+        <Text style={styles.detailText}>{item.technicianTime}</Text>
+      </View>
     </View>
-    <View style={styles.detailRow}>
-      <Ionicons name="time-outline" size={16} color="#333" />
-      <Text style={styles.detailText}>{item.time}</Text>
-    </View>
+
+    {/* Assigned Technician */}
     <View style={styles.detailRow}>
       <Ionicons name="person-outline" size={16} color="#333" />
       <Text style={styles.detailText}>{item.technician}</Text>
@@ -88,45 +75,86 @@ const renderAppointment = ({ item }: { item: AppointmentItem }) => (
   </LinearGradient>
 );
 
-// ---- 5. Main Component ----
+// ---- 4. Main Component ----
 export default function AppointmentsScreen() {
-  return (
+  const [orders, setOrders] = useState<AppointmentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/workorders?status=confirmed,in_progress");
+
+      const mapped: AppointmentItem[] = res.data.map((order: any) => ({
+        id: order._id,
+        ticket_id: order.ticket_id,
+        service: order.service?.name || "Unknown Service",
+
+
+        // Technician schedule
+        technicianDate: order.scheduled_technician?.date
+          ? new Date(order.scheduled_technician.date).toLocaleDateString(
+            "en-US",
+            { month: "short", day: "numeric", year: "numeric" }
+          )
+          : "Not Scheduled",
+        technicianTime: order.scheduled_technician?.time || "Not Scheduled",
+
+        technician: order.assigned_technician?.name || "Unassigned",
+        status:
+          order.status === "in_progress"
+            ? "InProgress"
+            : ("Confirmed" as AppointmentItem["status"]),
+      }));
+
+      setOrders(mapped);
+    } catch (err) {
+      console.error("Error fetching work orders", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrders();
+    }, [fetchOrders])
+  );
+
+  return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
         colors={["#4c669f", "#415580ff", "#394b7dff"]}
         style={styles.container}
       >
         <FlatList
-          data={CustomerAppointments}
+          data={orders}
           renderItem={renderAppointment}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16 }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={fetchOrders} />
+          }
+          ListEmptyComponent={() =>
+            loading ? null : (
+              <Text style={{ color: "white", textAlign: "center", marginTop: 50 }}>
+                No appointments found
+              </Text>
+            )
+          }
         />
       </LinearGradient>
-
     </SafeAreaView>
   );
 }
 
-// ---- 6. Styles ----
+// ---- 5. Styles ----
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafafa",
-  },
-  header: {
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 2,
-  },
-  headerTitle: {
-    color: "#0d47a1",
-    fontSize: 22,
-    fontWeight: "700",
   },
   card: {
     borderRadius: 16,
@@ -147,21 +175,37 @@ const styles = StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 20,
+    borderRadius: 40,
   },
   statusText: {
     color: "#000",
     fontSize: 12,
     fontWeight: "600",
   },
+  section: {
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#555",
+    marginBottom: 4,
+  },
   detailRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 6,
+    marginTop: 4,
   },
   detailText: {
     color: "#333",
     fontSize: 14,
     marginLeft: 6,
   },
+  ticketId: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#222",
+    marginBottom: 2,
+  }
 });
