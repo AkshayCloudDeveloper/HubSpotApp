@@ -9,8 +9,14 @@ import com.facebook.react.ReactNativeHost
 import com.facebook.react.ReactPackage
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
+import com.facebook.react.soloader.OpenSourceMergedSoMapping
+import com.facebook.soloader.SoLoader
+import com.twiliovoicereactnative.VoiceApplicationProxy
+import com.hubspotapp.ProximityPackage 
+
 
 class MainApplication : Application(), ReactApplication {
+  private val voiceApplicationProxy = VoiceApplicationProxy(this)
 
   override val reactNativeHost: ReactNativeHost =
       object : DefaultReactNativeHost(this) {
@@ -18,6 +24,7 @@ class MainApplication : Application(), ReactApplication {
             PackageList(this).packages.apply {
               // Packages that cannot be autolinked yet can be added manually here, for example:
               // add(MyReactNativePackage())
+             add(ProximityPackage())
             }
 
         override fun getJSMainModuleName(): String = "index"
@@ -33,6 +40,17 @@ class MainApplication : Application(), ReactApplication {
 
   override fun onCreate() {
     super.onCreate()
-    loadReactNative(this)
+    voiceApplicationProxy.onCreate()
+    SoLoader.init(this, OpenSourceMergedSoMapping)
+    if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
+      // If you opted-in for the New Architecture, we load the native entry point for this app.
+         loadReactNative(this)
+
+    }
+  }
+
+  override fun onTerminate() {
+    super.onTerminate()
+    voiceApplicationProxy.onTerminate()
   }
 }

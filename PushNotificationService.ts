@@ -32,6 +32,8 @@ export async function requestPermissions() {
   await PermissionsAndroid.requestMultiple([
     PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
     PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+    PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+    PermissionsAndroid.PERMISSIONS.BLUETOOTH_ADVERTISE,
   ]);
 }
 

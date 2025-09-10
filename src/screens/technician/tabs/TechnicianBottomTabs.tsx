@@ -9,6 +9,7 @@ import WorkOrderDetails from '../WorkOrderDetails';
 import { BellIcon } from '../../../components/BellIcon';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import TwilioVoiceScreen from "../TwilioVoiceScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -53,7 +54,7 @@ export default function TechnicianBottomTabs() {
           if (route.name === 'Dashboard') iconName = 'speedometer-outline';
           if (route.name === 'Appointments') iconName = 'calendar-outline';
           if (route.name === 'WorkOrders') iconName = 'briefcase-outline';
-
+          if (route.name === 'TwilioVoiceScreen') iconName = 'call-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         headerLeft: () => (
@@ -74,7 +75,7 @@ export default function TechnicianBottomTabs() {
         tabBarLabel: "Dashboard",
       }} />
       <Tab.Screen name="Appointments" component={TechnicianAppointments} />
-      <Tab.Screen name="WorkOrders" component={WorkOrderDetails} />
+      <Tab.Screen name="TwilioVoiceScreen" component={TwilioVoiceScreen} />
     </Tab.Navigator>
   );
 }
